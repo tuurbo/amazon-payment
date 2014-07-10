@@ -1,0 +1,21 @@
+{
+	"name": "tuurbo/amazon-payment",
+	"description": "",
+	"keywords": ["laravel", "amazon", "credit card", "payment"],
+	"authors": [
+		{
+			"name": "Daniel Fraser",
+			"email": "dlf1987+repo@gmail.com"
+		}
+	],
+	"require": {
+		"php": ">=5.4.0",
+		"guzzlehttp/guzzle": "~4.0",
+		"guzzlehttp/retry-subscriber": "0.1.*"
+	},
+	"autoload": {
+		"psr-0": {
+			"Tuurbo\\AmazonPayment\\": "src/"
+		}
+	}
+}
