@@ -14,7 +14,7 @@
 		"guzzlehttp/retry-subscriber": "0.1.*"
 	},
 	"autoload": {
-		"psr-0": {
+		"psr-4": {
 			"Tuurbo\\AmazonPayment\\": "src/"
 		}
 	}
