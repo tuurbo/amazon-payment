@@ -14,6 +14,7 @@ class AmazonPayment {
 	private $orderTotal = 0;
 	private $amazonAuthorizationId;
 	private $storeName;
+	private $statementName;
 
 	public function __construct($config)
 	{
@@ -22,6 +23,10 @@ class AmazonPayment {
 
 		if ($this->config['store_name']) {
 			$this->storeName = $this->config['store_name'];
+		}
+
+		if ($this->config['statement_name']) {
+			$this->statementName = $this->config['statement_name'];
 		}
 	}
 
@@ -94,10 +99,14 @@ class AmazonPayment {
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
 			'AmazonAuthorizationId' => $data['authorizationId'],
-			'CaptureReferenceId' => $this->getCaptureReferenceId($data['referenceId']),
+			'CaptureReferenceId' => $this->generateReferenceId($data['referenceId'], 'C'),
 			'CaptureAmount.Amount' => $data['amount'],
 			'CaptureAmount.CurrencyCode' => 'USD'
 		];
+
+		if (isset($data['statementName']) || $this->statementName) {
+			$params['SoftDescriptor'] = isset($data['statementName']) ? $data['statementName'] : $this->statementName;
+		}
 
 		$resp = $this->client->setupAmazonCall('Capture', $params);
 
@@ -122,11 +131,33 @@ class AmazonPayment {
 		];
 	}
 
+	public function refund($data)
+	{
+		$params = [
+			'AmazonCaptureId' => $data['referenceId'],
+			'RefundReferenceId' => $this->generateReferenceId($data['referenceId'], 'R'), // accept custom refund id???
+			'RefundAmount.Amount' => $data['amount'],
+			'RefundAmount.CurrencyCode' => 'USD',
+			'SellerRefundNote' => isset($data['reason']) ? $data['reason'] : null
+		];
+
+		if (isset($data['statementName']) || $this->statementName) {
+			$params['SoftDescriptor'] = isset($data['statementName']) ? $data['statementName'] : $this->statementName;
+		}
+
+		$resp = $this->client->setupAmazonCall('Refund', $params);
+
+		return [
+			'details' => $resp['RefundResult']['RefundDetails'],
+			'requestId' => $resp['ResponseMetadata']['RequestId']
+		];
+	}
+
 	private function setupAuthorize($data, $capture = false)
 	{
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
-			'AuthorizationReferenceId' => $this->getAuthorizationReferenceId($data['referenceId']),
+			'AuthorizationReferenceId' => $this->generateReferenceId($data['referenceId'], 'A'),
 			'AuthorizationAmount.Amount' => $data['amount'],
 			'AuthorizationAmount.CurrencyCode' => 'USD',
 			'TransactionTimeout' => 0
@@ -138,6 +169,10 @@ class AmazonPayment {
 
 		if ($capture === true) {
 			$params['CaptureNow'] = true;
+
+			if (isset($data['statementName']) || $this->statementName) {
+				$params['SoftDescriptor'] = isset($data['statementName']) ? $data['statementName'] : $this->statementName;
+			}
 		}
 
 		$resp = $this->client->setupAmazonCall('Authorize', $params);
@@ -148,14 +183,9 @@ class AmazonPayment {
 		];
 	}
 
-	private function getAuthorizationReferenceId($referenceId)
+	private function generateReferenceId($referenceId, $append)
 	{
-		return str_replace('-', '', $referenceId) . 'A'. mt_rand(100000, 999999);
-	}
-
-	private function getCaptureReferenceId($referenceId)
-	{
-		return str_replace('-', '', $referenceId) . 'C'. mt_rand(100000, 999999);
+		return str_replace('-', '', $referenceId) . $append . mt_rand(100000, 999999);
 	}
 
 	public function login($accessToken)
