@@ -131,6 +131,21 @@ class AmazonPayment {
 		];
 	}
 
+	public function cancelOrder($data)
+	{
+		$params = [
+			'AmazonOrderReferenceId' => $data['referenceId'],
+			'CancelationReason' => isset($data['reason']) ? $data['reason'] : null
+		];
+
+		$resp = $this->client->setupAmazonCall('CancelOrderReference', $params);
+
+		return [
+			'details' => $resp['CancelOrderReferenceResult'],
+			'requestId' => $resp['ResponseMetadata']['RequestId']
+		];
+	}
+
 	public function refund($data)
 	{
 		$params = [
