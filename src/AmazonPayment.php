@@ -1,18 +1,9 @@
 <?php namespace Tuurbo\AmazonPayment;
 
-use Config;
 use Tuurbo\AmazonPayment\Exceptions;
-
-/*
-A lot of the methods can have extra fields appended.. read the link below to add more.
-http://docs.developer.amazonservices.com/en_US/off_amazon_payments/OffAmazonPayments_AuthorizeOnBillingAgreement.html
-*/
 
 class AmazonPayment {
 
-	private $orderReferenceId;
-	private $orderTotal = 0;
-	private $amazonAuthorizationId;
 	private $storeName;
 	private $statementName;
 
@@ -205,7 +196,7 @@ class AmazonPayment {
 
 	public function login($accessToken)
 	{
-		$resp = \Guzzle::get('https://api.amazon.com/auth/o2/tokeninfo?access_token='. urlencode($accessToken), [
+		$resp = $this->client->connect->get('https://api.amazon.com/auth/o2/tokeninfo?access_token='. urlencode($accessToken), [
 			'exceptions' => false
 		]);
 
@@ -230,7 +221,7 @@ class AmazonPayment {
 			$script = 'https://api.amazon.com/user/profile';
 		}
 
-		$resp = \Guzzle::get($script, [
+		$resp = $this->client->connect->get($script, [
 			'exceptions' => false,
 			'headers' => [
 				'Authorization' => 'bearer '. $accessToken

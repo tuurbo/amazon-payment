@@ -11,6 +11,7 @@ class AmazonPaymentClient {
 	private $sellerId;
 	private $accessKey;
 	private $secretKey;
+	private $connect;
 	private $signatureVersion = 2;
 	private $signatureMethod = 'HmacSHA256';
 	private $serviceUrl;
@@ -20,6 +21,7 @@ class AmazonPaymentClient {
 		$this->sellerId = $sellerId;
 		$this->accessKey = $accessKey;
 		$this->secretKey = $secretKey;
+		$this->connect = new GuzzleHttp\Client();
 
 		if ($sandboxMode === true) {
 			$this->serviceUrl = 'https://mws.amazonservices.com/OffAmazonPayments_Sandbox/2013-01-01';
@@ -42,17 +44,14 @@ class AmazonPaymentClient {
 
 	private function postToAmazon(array $params)
 	{
-		$query = $this->getParametersAsString($params);
-
 		// Retry 500 and 503 responses
 		$retry = new RetrySubscriber([
 			'filter' => RetrySubscriber::createStatusFilter(),
 			'max' => 3, // 4x total
-			'delay' => function ($number, $event) { return 400; } // 0.4 seconds
+			'delay' => function () { return 400; } // 0.4 seconds
 		]);
 
-		$client = new GuzzleHttp\Client();
-		$client->getEmitter()->attach($retry);
+		$client = $this->connect->getEmitter()->attach($retry);
 		$resp = $client->post($this->serviceUrl, ['exceptions' => false, 'body' => $params]);
 
 		$statusCode = (int) $resp->getStatusCode();
@@ -66,7 +65,7 @@ class AmazonPaymentClient {
 
 		if (isset($resp['Error']) && $resp['Error']['Code']) {
 			$requestId = isset($resp['RequestId']) ? $resp['RequestId'] : null;
-			return $this->getException($resp['Error']['Code'], $resp['Error']['Message'], $statusCode, $requestId);
+			$this->getException($resp['Error']['Code'], $resp['Error']['Message'], $statusCode, $requestId);
 		}
 
 		return [
@@ -149,7 +148,7 @@ class AmazonPaymentClient {
 		return implode('&', $queryParams);
 	}
 
-	private function signSignature($data, $key, $algorithm)
+	private function signSignature($data, $key)
 	{
 		return base64_encode(
 			hash_hmac('sha256', $data, $key, true)
