@@ -11,10 +11,11 @@ class AmazonPaymentClient {
 	private $sellerId;
 	private $accessKey;
 	private $secretKey;
-	private $connect;
 	private $signatureVersion = 2;
 	private $signatureMethod = 'HmacSHA256';
 	private $serviceUrl;
+
+	public $connect;
 
 	function __construct($sellerId, $accessKey, $secretKey, $sandboxMode)
 	{
