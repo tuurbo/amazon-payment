@@ -52,9 +52,9 @@ class AmazonPaymentClient {
 			'delay' => function () { return 400; } // 0.4 seconds
 		]);
 
-		$client = $this->connect->getEmitter()->attach($retry);
+		$client = $this->connect;
+		$client->getEmitter()->attach($retry);
 		$resp = $client->post($this->serviceUrl, ['exceptions' => false, 'body' => $params]);
-
 		$statusCode = (int) $resp->getStatusCode();
 
 		if ($statusCode === 500 || $statusCode === 503) {
