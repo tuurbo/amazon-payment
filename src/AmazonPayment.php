@@ -4,8 +4,10 @@ use Tuurbo\AmazonPayment\Exceptions;
 
 class AmazonPayment {
 
-	private $storeName;
-	private $statementName;
+	protected $client;
+	protected $config;
+	protected $storeName;
+	protected $statementName;
 
 	public function __construct($config)
 	{
