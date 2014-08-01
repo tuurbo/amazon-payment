@@ -2,6 +2,7 @@
 	"name": "tuurbo/amazon-payment",
 	"description": "Login and Pay with Amazon",
 	"keywords": ["laravel", "amazon", "credit card", "payment"],
+	"license": "MIT",
 	"authors": [
 		{
 			"name": "Daniel Fraser",
