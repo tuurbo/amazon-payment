@@ -1,11 +1,11 @@
 {
 	"name": "tuurbo/amazon-payment",
-	"description": "",
+	"description": "Login and Pay with Amazon",
 	"keywords": ["laravel", "amazon", "credit card", "payment"],
 	"authors": [
 		{
 			"name": "Daniel Fraser",
-			"email": "dlf1987+repo@gmail.com"
+			"email": "dlf1987+github@gmail.com"
 		}
 	],
 	"require": {
