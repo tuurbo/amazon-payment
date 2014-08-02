@@ -1,4 +1,4 @@
-<?php namespace Tuurbo\AmazonPayment;
+<?php namespace Tuurbo\AmazonPayment\Exceptions;
 
 use Exception;
 

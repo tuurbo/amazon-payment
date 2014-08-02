@@ -58,7 +58,7 @@ class AmazonPaymentClient {
 		$statusCode = (int) $resp->getStatusCode();
 
 		if ($statusCode === 500 || $statusCode === 503) {
-			throw new AmazonPaymentException(null, 'Internal Server Error', $statusCode);
+			throw new Exceptions\AmazonPaymentException(null, 'Internal Server Error', $statusCode);
 		}
 
 		$resp = $resp->xml();
@@ -77,12 +77,12 @@ class AmazonPaymentClient {
 
 	public function getException($amazonCode, $message, $statusCode, $requestId = null)
 	{
-		$customExceptionName = 'Tuurbo\AmazonPayment\\'. $this->exceptionAlias($amazonCode) .'Exception';
+		$customExceptionName = 'Tuurbo\AmazonPayment\Exceptions\\'. $this->exceptionAlias($amazonCode) .'Exception';
 
 		if (class_exists($customExceptionName)) {
 			throw new $customExceptionName($message, $statusCode);
 		} else {
-			throw new AmazonPaymentException($amazonCode, $message, $statusCode, $requestId);
+			throw new Exceptions\AmazonPaymentException($amazonCode, $message, $statusCode, $requestId);
 		}
 	}
 

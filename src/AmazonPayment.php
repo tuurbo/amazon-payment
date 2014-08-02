@@ -205,11 +205,11 @@ class AmazonPayment {
 		$data = $resp->json();
 
 		if (isset($data['error'])) {
-			throw new AmazonLoginException($data['error'], $data['error_description']);
+			throw new Exceptions\AmazonLoginException($data['error'], $data['error_description']);
 		}
 
 		if ($data['aud'] !== $this->config['client_id']) {
-			throw new AmazonLoginException('invalid_access_token', 'Access token does not belong to this seller.');
+			throw new Exceptions\AmazonLoginException('invalid_access_token', 'Access token does not belong to this seller.');
 		}
 
 		return $data;
@@ -233,7 +233,7 @@ class AmazonPayment {
 		$data = $resp->json();
 
 		if (isset($data['error'])) {
-			throw new AmazonLoginException($data['error'], $data['error_description']);
+			throw new Exceptions\AmazonLoginException($data['error'], $data['error_description']);
 		}
 
 		return $data;
