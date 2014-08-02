@@ -111,7 +111,7 @@ class AmazonPaymentClient {
 	{
 		$stringToSign = $this->stringToSignatureV2($params);
 
-		return $this->signSignature($stringToSign, $this->secretKey, $this->signatureMethod);
+		return $this->signSignature($stringToSign, $this->secretKey);
 	}
 
 	private function stringToSignatureV2(array $params)
