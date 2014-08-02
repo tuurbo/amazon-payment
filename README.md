@@ -40,7 +40,7 @@ return [
 ];
 ```
 
-### Native setup
+### Native Setup
 ```
 $config = [
     'sandbox_mode' => true,
@@ -148,6 +148,39 @@ try {
 	// log error.
 	// tell customer something went wrong.
 
+}
+```
+
+Example response from AmazonPayment::setOrderDetails()
+```
+{
+    "details": {
+        "AmazonOrderReferenceId": "SXX-XXXXXXX-XXXXXXX",
+        "ExpirationTimestamp": "2015-01-29T22:35:40.555Z",
+        "OrderTotal": {
+            "Amount": "4637.43",
+            "CurrencyCode": "USD"
+        },
+        "Destination": {
+           "DestinationType": "Physical",
+            "PhysicalDestination": {
+                "PostalCode": "60602",
+                "CountryCode": "US",
+                "StateOrRegion": "IL",
+                "City": "Chicago"
+            }
+        },
+        "OrderReferenceStatus": {
+            "State": "Draft"
+        },
+        "ReleaseEnvironment": "Sandbox",
+        "SellerOrderAttributes": {
+            "StoreName": "ACME Inc",
+            "SellerOrderId": "12345"
+        },
+        "CreationTimestamp": "2014-08-02T22:35:40.555Z"
+    },
+    "requestId": "12345678-557f-6ae2-a2ab-ef6db5a325a2"
 }
 ```
 
