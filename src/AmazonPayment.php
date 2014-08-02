@@ -43,7 +43,12 @@ class AmazonPayment {
 			$params['OrderReferenceAttributes.SellerNote'] = $data['note'];
 		}
 
-		return $this->client->setupAmazonCall('SetOrderReferenceDetails', $params);
+		$resp = $this->client->setupAmazonCall('SetOrderReferenceDetails', $params);
+
+		return [
+			'details' => $resp['SetOrderReferenceDetailsResult']['OrderReferenceDetails'],
+			'requestId' => $resp['ResponseMetadata']['RequestId']
+		];
 	}
 
 	public function getOrderDetails($data)
