@@ -18,5 +18,8 @@
 		"psr-4": {
 			"Tuurbo\\AmazonPayment\\": "src/"
 		}
+	},
+	"require-dev": {
+		"phpspec/phpspec": "~2.0"
 	}
 }

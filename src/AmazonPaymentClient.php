@@ -1,6 +1,6 @@
 <?php namespace Tuurbo\AmazonPayment;
 
-use GuzzleHttp;
+use GuzzleHttp\Client;
 use GuzzleHttp\Subscriber\Retry\RetrySubscriber;
 use Tuurbo\AmazonPayment\Exceptions;
 
@@ -17,14 +17,14 @@ class AmazonPaymentClient {
 
 	public $connect;
 
-	function __construct($sellerId, $accessKey, $secretKey, $sandboxMode)
+	function __construct(Client $client, $config)
 	{
-		$this->sellerId = $sellerId;
-		$this->accessKey = $accessKey;
-		$this->secretKey = $secretKey;
-		$this->connect = new GuzzleHttp\Client();
+		$this->connect = $client;
+		$this->sellerId = $config['seller_id'];
+		$this->accessKey = $config['access_key'];
+		$this->secretKey = $config['secret_key'];
 
-		if ($sandboxMode === true) {
+		if ($config['sandbox_mode'] === true) {
 			$this->serviceUrl = 'https://mws.amazonservices.com/OffAmazonPayments_Sandbox/2013-01-01';
 		} else {
 			$this->serviceUrl = 'https://mws.amazonservices.com/OffAmazonPayments/2013-01-01';
@@ -121,7 +121,7 @@ class AmazonPaymentClient {
 		$endpoint = parse_url($this->serviceUrl);
 		$data .= $endpoint['host'];
 		$data .= "\n";
-		$uri = array_key_exists('path', $endpoint) ? $endpoint['path'] : null;
+		$uri = isset($endpoint['path']) ? $endpoint['path'] : null;
 		if (!isset ($uri)) {
 			$uri = "/";
 		}
@@ -154,6 +154,11 @@ class AmazonPaymentClient {
 		return base64_encode(
 			hash_hmac('sha256', $data, $key, true)
 		);
+	}
+
+	public function getData($url, $params)
+	{
+		return $this->connect->get($url, $params)->json();
 	}
 
 }

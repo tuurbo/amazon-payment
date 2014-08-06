@@ -1,7 +1,7 @@
 <?php namespace Tuurbo\AmazonPayment;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
-use Config;
 
 class AmazonPaymentServiceProvider extends ServiceProvider {
 
@@ -21,7 +21,9 @@ class AmazonPaymentServiceProvider extends ServiceProvider {
 	{
 		$this->app['amazonpayment'] = $this->app->share(function($app)
 		{
-			return new AmazonPayment($app['config']->get('amazon'));
+			$config = $app['config']->get('amazon');
+
+			return new AmazonPayment(new AmazonPaymentClient(new Client, $config), $config);
 		});
 	}
 

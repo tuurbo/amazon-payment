@@ -9,9 +9,9 @@ class AmazonPayment {
 	protected $storeName;
 	protected $statementName;
 
-	public function __construct($config)
+	public function __construct(AmazonPaymentClient $client, $config)
 	{
-		$this->client = new AmazonPaymentClient($config['seller_id'], $config['access_key'], $config['secret_key'], $config['sandbox_mode']);
+		$this->client = $client;
 		$this->config = $config;
 
 		if ($this->config['store_name']) {
@@ -25,6 +25,8 @@ class AmazonPayment {
 
 	public function setOrderDetails($data)
 	{
+		$this->requiredData($data, ['referenceId', 'amount']);
+
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
 			'OrderReferenceAttributes.OrderTotal.CurrencyCode' => 'USD',
@@ -53,6 +55,8 @@ class AmazonPayment {
 
 	public function getOrderDetails($data)
 	{
+		$this->requiredData($data, ['referenceId']);
+
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId']
 		];
@@ -71,6 +75,8 @@ class AmazonPayment {
 
 	public function confirmOrder($data)
 	{
+		$this->requiredData($data, ['referenceId']);
+
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
 		];
@@ -94,6 +100,8 @@ class AmazonPayment {
 
 	public function capture($data)
 	{
+		$this->requiredData($data, ['referenceId', 'authorizationId', 'amount']);
+
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
 			'AmazonAuthorizationId' => $data['authorizationId'],
@@ -116,6 +124,8 @@ class AmazonPayment {
 
 	public function closeOrder($data)
 	{
+		$this->requiredData($data, ['referenceId']);
+
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
 			'ClosureReason' => isset($data['reason']) ? $data['reason'] : 'Order complete'
@@ -131,6 +141,8 @@ class AmazonPayment {
 
 	public function cancelOrder($data)
 	{
+		$this->requiredData($data, ['referenceId']);
+
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
 			'CancelationReason' => isset($data['reason']) ? $data['reason'] : null
@@ -146,6 +158,8 @@ class AmazonPayment {
 
 	public function refund($data)
 	{
+		$this->requiredData($data, ['referenceId', 'amount']);
+
 		$params = [
 			'AmazonCaptureId' => $data['referenceId'],
 			'RefundReferenceId' => $this->generateReferenceId($data['referenceId'], 'R'), // accept custom refund id???
@@ -168,6 +182,8 @@ class AmazonPayment {
 
 	private function setupAuthorize($data, $capture = false)
 	{
+		$this->requiredData($data, ['referenceId', 'amount']);
+
 		$params = [
 			'AmazonOrderReferenceId' => $data['referenceId'],
 			'AuthorizationReferenceId' => $this->generateReferenceId($data['referenceId'], 'A'),
@@ -203,11 +219,9 @@ class AmazonPayment {
 
 	public function login($accessToken)
 	{
-		$resp = $this->client->connect->get('https://api.amazon.com/auth/o2/tokeninfo?access_token='. urlencode($accessToken), [
+		$data = $this->client->getData('https://api.amazon.com/auth/o2/tokeninfo?access_token='. urlencode($accessToken), [
 			'exceptions' => false
 		]);
-
-		$data = $resp->json();
 
 		if (isset($data['error'])) {
 			throw new Exceptions\AmazonLoginException($data['error'], $data['error_description']);
@@ -253,6 +267,21 @@ class AmazonPayment {
 		}
 
 		return $script . $this->config['seller_id'];
+	}
+
+	private function requiredData($data, $args)
+	{
+		$missing = [];
+		foreach ($args as $arg) {
+			if (! isset($data[$arg]) || (isset($data[$arg]) && ! $data[$arg])) {
+				$missing[] = $arg;
+			}
+		}
+
+		if ($missing) {
+			$plural = count($missing) > 1 ? 'parameters' : 'parameter';
+			throw new Exceptions\InvalidDataException('Missing '. implode(', ', $missing) .' '. $plural .' from array');
+		}
 	}
 
 }
