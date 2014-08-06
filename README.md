@@ -52,9 +52,14 @@ $config = [
     'statement_name' => 'AcmeInc 555-555-5555'
 ];
 
-try {
+$amazonPayment = new Tuurbo\AmazonPayment\AmazonPayment(
+    new Tuurbo\AmazonPayment\AmazonPaymentClient(
+        new GuzzleHttp\Client, $config
+    ),
+    $config
+);
 
-    $amazonPayment = new Tuurbo\AmazonPayment\AmazonPayment($config);
+try {
 
     $response = $amazonPayment->setOrderDetails(...);
 
