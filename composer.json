@@ -1,7 +1,7 @@
 {
 	"name": "tuurbo/amazon-payment",
 	"description": "Login and Pay with Amazon",
-	"keywords": ["laravel", "amazon", "credit card", "payment"],
+	"keywords": ["laravel", "amazon", "payment", "amazon pay", "credit card"],
 	"license": "MIT",
 	"authors": [
 		{
