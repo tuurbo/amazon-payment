@@ -21,7 +21,7 @@ class AmazonPaymentServiceProvider extends ServiceProvider {
 	{
 		$this->app['amazonpayment'] = $this->app->share(function($app)
 		{
-			$config = $app['config']->get('amazon');
+			$config = $app['config']->get('services.amazonpayment');
 
 			return new AmazonPayment(new AmazonPaymentClient(new Client, $config), $config);
 		});
