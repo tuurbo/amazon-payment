@@ -6,7 +6,7 @@ Didn't like the official amazon package so i made this one. Its much lighter and
 Install through Composer.
 ```
 "require": {
-    "tuurbo/amazon-payment": "~1.2.0"
+    "tuurbo/amazon-payment": "~1.3.0"
 }
 ```
 
