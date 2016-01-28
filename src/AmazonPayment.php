@@ -249,7 +249,7 @@ class AmazonPayment {
 			]
 		]);
 
-		$data = $resp->json();
+		$data = json_decode($resp->getBody(), true);
 
 		if (isset($data['error'])) {
 			throw new Exceptions\AmazonLoginException($data['error'], $data['error_description']);

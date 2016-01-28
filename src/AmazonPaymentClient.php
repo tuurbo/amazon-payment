@@ -1,8 +1,7 @@
 <?php namespace Tuurbo\AmazonPayment;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Subscriber\Retry\RetrySubscriber;
 use Tuurbo\AmazonPayment\Exceptions;
+use GuzzleHttp\ClientInterface;
 
 class AmazonPaymentClient {
 
@@ -17,7 +16,7 @@ class AmazonPaymentClient {
 
 	public $connect;
 
-	function __construct(Client $client, $config)
+	function __construct(ClientInterface $client, $config)
 	{
 		$this->connect = $client;
 		$this->sellerId = $config['seller_id'];
@@ -45,23 +44,14 @@ class AmazonPaymentClient {
 
 	private function postToAmazon(array $params)
 	{
-		// Retry 500 and 503 responses
-		$retry = new RetrySubscriber([
-			'filter' => RetrySubscriber::createStatusFilter(),
-			'max' => 3, // 4x total
-			'delay' => function () { return 400; } // 0.4 seconds
-		]);
-
-		$client = $this->connect;
-		$client->getEmitter()->attach($retry);
-		$resp = $client->post($this->serviceUrl, ['exceptions' => false, 'body' => $params]);
+		$resp = $this->connect->post($this->serviceUrl, ['exceptions' => false, 'form_params' => $params]);
 		$statusCode = (int) $resp->getStatusCode();
 
 		if ($statusCode === 500 || $statusCode === 503) {
 			throw new Exceptions\AmazonPaymentException(null, 'Internal Server Error', $statusCode);
 		}
 
-		$resp = $resp->xml();
+		$resp = simplexml_load_string($resp->getBody());
 		$resp = json_decode(json_encode($resp), true);
 
 		if (isset($resp['Error']) && $resp['Error']['Code']) {
@@ -158,7 +148,9 @@ class AmazonPaymentClient {
 
 	public function getData($url, $params)
 	{
-		return $this->connect->get($url, $params)->json();
+		$resp = $this->connect->get($url, $params)->getBody();
+
+		return json_decode($resp, true);
 	}
 
 }

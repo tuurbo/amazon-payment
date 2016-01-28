@@ -23,7 +23,9 @@ class AmazonPaymentServiceProvider extends ServiceProvider {
 		{
 			$config = $app['config']->get('services.amazonpayment');
 
-			return new AmazonPayment(new AmazonPaymentClient(new Client, $config), $config);
+			$client = (new GuzzleRetryClient(3))->create();
+
+			return new AmazonPayment(new AmazonPaymentClient($client, $config), $config);
 		});
 	}
 
