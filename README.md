@@ -10,7 +10,7 @@ Install through Composer.
 }
 ```
 
-### Laravel 4 Setup
+### Laravel 4 or 5 Setup
 Next, update app/config/app.php to include a reference to this package's service provider in the providers array and the facade in the aliases array.
 
 ```
@@ -26,7 +26,9 @@ Next, update app/config/app.php to include a reference to this package's service
 ```
 
 add to the app/config/services.php config file.
-```
+```php
+<?php
+
 return [
 
     ...
@@ -44,7 +46,9 @@ return [
 ```
 
 ### Native Setup
-```
+```php
+<?php
+
 $config = [
     'sandbox_mode' => true,
     'client_id' => '',
@@ -84,12 +88,124 @@ Each step below represents a page on your site.
 
 ```
 
-## Example Usage (Scenario 2):
-User is redirected to amazon when they click the Amazon Pay button.
+## Example Usage (Scenario 1):
+User is redirected to amazon when they click the Amazon Login button, then to your sites login page.
 
-Page: `GET -> http://example.com/cart`
+Login View example:
+
+```html
+<script type="text/javascript">
+	var amazonClientId = '...';
+	var amazonSellerId = '...';
+	window.onAmazonLoginReady = function(){
+		amazon.Login.setClientId(amazonClientId);
+	};
+</script>
+<script type="text/javascript" src="<?= AmazonPayment::script() ?>"></script>
+<script type="text/javascript">
+	var authRequest;
+	OffAmazonPayments.Button("AmazonPayButton", amazonSellerId, {
+		type: "LwA",
+		authorization: function() {
+			loginOptions = { scope: "profile payments:widget payments:shipping_address" };
+			authRequest = amazon.Login.authorize(loginOptions);
+		},
+		onSignIn: function(orderReference) {
+			<!-- redirect page ex: http://example.com/login -->
+			authRequest.onComplete('/login?amazon_id=' + orderReference.getAmazonOrderReferenceId());
+		},
+		onError: function(error) {
+			alert(error.getErrorCode() + ": " + error.getErrorMessage());
+		}
+	});
+</script>
 ```
-<script type='text/javascript'>
+
+Login Controller: `GET -> http://example.com/login`
+```php
+<?php
+
+if (Input::has('amazon_id') && Input::has('access_token')) {
+    try {
+        AmazonPayment::login(Input::get('access_token'));
+        $amazon = AmazonPayment::getLoginDetails(Input::get('access_token'));
+
+        // check if user has already logged in with Amazon
+        $user = User::where('amazon_id', $amazon['user_id'])->first();
+
+        // Update and login Amazon user
+        if ($user) {
+            $validator = Validator::make([
+                'email' => $amazon['email'],
+            ], [
+                'email' => 'unique:user,email,'.$user->id,
+            ]);
+
+            $user->last_login = new Datetime;
+
+            // update their current amazon email
+            if ($validator->passes()) {
+                $user->email = $amazon['email'];
+            }
+
+            $user->save();
+
+            Auth::loginUsingId($user->id);
+
+            return Redirect::intended('/account');
+        }
+
+        // if they dont have an amazon linked account,
+        // check if there amazon email is already taken
+        $user = \User::where('email', $amazon['email'])->first();
+
+        // email address is already taken
+        // this is optional if you only except amazon logins
+        if ($user) {
+
+            // redirect to a page to link their amazon account
+            // to their non-amazon account that they already have on your site.
+            // example...
+            $credentials = Crypt::encrypt(json_encode([
+                'amazon_id' => $amazon['user_id'],
+                'amazon_email' => $amazon['email'],
+            ]));
+
+            // redirect and then decrypt the data and make them put in the their non-amazon password to merge their amazon account.
+            return Redirect::to('/register/connect-amazon/'.$credentials);
+        }
+
+    } catch (\Exception $e) {
+
+        Session::forget('amazon');
+
+        return Redirect::to('/login')
+            ->with('failure_message', 'There was an error trying to login with your Amazon account.');
+    }
+
+    // If no user already exists, create a new amazon user account
+    $user = new \User;
+    $user->amazon_id = $amazon['user_id'];
+    $user->email = $amazon['email'];
+    $user->name = $amazon['name'];
+    $user->signup_at = 'normal amazon account';
+    $user->save();
+
+    Auth::user()->loginUsingId($user->id);
+
+    return Redirect::intended('/account');
+}
+
+```
+
+continue to scenario 2 for Amazon Checkout...
+
+## Example Usage (Scenario 2):
+User is redirected to amazon when they click the Amazon Pay button, then back to your sites checkout page.
+
+Shopping Cart: `GET -> http://example.com/cart`
+```html
+<script type="text/javascript">
     var amazonClientId = '...';
     var amazonSellerId = '...';
 	window.onAmazonLoginReady = function() {
@@ -117,55 +233,57 @@ Page: `GET -> http://example.com/cart`
 	});
 </script>
 
-<!-- Amazon Pay button is display here -->
+<!-- Amazon Pay button is displayed here -->
 <div id="AmazonPayButton"></div>
 ```
 
 After the user logs into Amazon, Amazon redirects them back to your site.
 
-Page: `GET -> http://example.com/amazon/checkout`
-```
+Amazon Checkout Controller: `GET -> http://example.com/amazon/checkout`
+```php
+<?php
+
 // get access token
 $accessToken = $_GET['access_token'];
 
 try {
-
     // get user details, use them if needed
 	$amazonUser = AmazonPayment::getLoginDetails($accessToken);
-
-    // Laravel Auth example:
-    // login user if their Amazon user_id is found in your users table
-    // Obviously for this to work, you would have created the user entry at some other point in your app, maybe the account register page or something
-    $user = User::where('amazon_id', $amazonUser['user_id'])->first();
-
-    // If user is found, log them in
-    if ($user) {
-        Auth::loginUsingId($user->id);
-    }
 
 } catch (\Exception $e) {
 
     // Redirect back to cart page if error
 	return Redirect::to('/cart')
         ->with('failure_message', 'Failed to connect to your Amazon account. Please try again.');
+}
 
+// Laravel Auth example:
+// login user if their Amazon user_id is found in your users table
+// Obviously for this to work, you would have created the user entry at some other point in your app, maybe the account register page or something
+$user = User::where('amazon_id', $amazonUser['user_id'])->first();
+
+// If user is found, log them in
+if ($user) {
+    Auth::loginUsingId($user->id);
 }
 
 return View::make(...);
 ```
-```
+
+Amazon Checkout View example:
+```html
 <script type="text/javascript">
 	var authRequest, referenceId;
 	var amazonClientId = '...';
 	var amazonSellerId = '...';
 </script>
-<script type='text/javascript'>
+<script type="text/javascript">
 	window.onAmazonLoginReady = function() {
 		amazon.Login.setClientId(amazonClientId);
 	};
 </script>
 <script type="text/javascript" src="<?= AmazonPayment::script() ?>"></script>
-<script type='text/javascript'>
+<script type="text/javascript">
 
 	new OffAmazonPayments.Widgets.AddressBook({
 		sellerId: amazonSellerId,
@@ -232,8 +350,11 @@ return View::make(...);
 
 Create the users order after they submit it.
 
-Page: `POST -> http://example.com/checkout`
-```
+Amazon Checkout Controller: `POST -> http://example.com/checkout`
+```php
+<?php
+
+// If using Laravel "Input::get('...')" can be used in place of "$_POST['...']"
 
 // get access token
 $accessToken = $_POST['access_token'];
@@ -253,6 +374,9 @@ try {
         ->with('failure_message', 'Failed to connect to your Amazon account. Please try again.');
 
 }
+
+// (optional) Wrap your Order transaction with the below code to revert the order if the amazon payment fails.
+// DB::beginTransaction();
 
 // create customers order
 $order = new Order;
@@ -291,17 +415,24 @@ try {
     $order->shipping_state = $address['StateOrRegion'];
     $order->save();
 
+
+// log error.
+// tell customer something went wrong.
+// maybe delete `$order->delete()` or rollback `DB::rollback();` your websites internal order in the database since it wasn't approved by Amazon
+
+} catch (\Tuurbo\AmazonPayment\Exceptions\OrderReferenceNotModifiableException $e) {
+    // DB::rollback();
+
+    return Redirect::to('/secure/cart')->with('warning_message', 'Your order has already been placed and is not modifiable online. Please call '.config('site.company.phone').' to make changes.');
 } catch (\Exception $e) {
+    // DB::rollback();
 
-	// log error.
-	// tell customer something went wrong.
-    // maybe delete or rollback your websites internal order in the database since it wasn't approved by Amazon `$order->delete()`
-
+    return Redirect::to('/secure/cart')->with('warning_message', 'There was an error with your order. Please try again.');
 }
 ```
 
 Example response from AmazonPayment::getOrderDetails()
-```
+```json
 {
     "details": {
         "AmazonOrderReferenceId": "SXX-XXXXXXX-XXXXXXX",
@@ -335,7 +466,9 @@ Example response from AmazonPayment::getOrderDetails()
 
 ## Available Methods
 
-```
+```php
+<?php
+
 AmazonPayment::setOrderDetails()
 AmazonPayment::getOrderDetails()
 AmazonPayment::confirmOrder()
