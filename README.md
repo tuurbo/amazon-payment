@@ -429,6 +429,10 @@ try {
 
     return Redirect::to('/secure/cart')->with('warning_message', 'There was an error with your order. Please try again.');
 }
+
+// DB::commit();
+
+// other checkout stuff...
 ```
 
 Example response from AmazonPayment::getOrderDetails()
