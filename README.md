@@ -5,9 +5,7 @@ Didn't like the official amazon package so i made this one. Its much lighter and
 ## Installation
 Install through Composer.
 ```
-"require": {
-    "tuurbo/amazon-payment": "~1.4.0"
-}
+composer require tuurbo/amazon-payment
 ```
 
 ### Laravel 4 or 5 Setup

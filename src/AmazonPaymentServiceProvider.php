@@ -19,8 +19,7 @@ class AmazonPaymentServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		$this->app['amazonpayment'] = $this->app->share(function($app)
-		{
+		$this->app->singleton('amazonpayment', function($app) {
 			$config = $app['config']->get('services.amazonpayment');
 
 			$client = (new GuzzleRetryClient(3))->create();
